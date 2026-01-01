@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <sstream> // për konvertimin e ID-së në string
+#include <limits>
 using namespace std;
 
 // ================= STRUKTURA =================
@@ -8,7 +10,8 @@ struct Nxenes {
     int id;
     string emri;
     string mbiemri;
-    // Mund të shtoni fusha të tjera si klasa, shkolla, prindi etj.
+    string klasa;
+    string shkolla;
 };
 
 // ================= VARIABLA GLOBALE =================
@@ -25,10 +28,16 @@ int gjeneroID() {
 void regjistroNxenes() {
     Nxenes n;
     n.id = gjeneroID();
+
     cout << "Shkruaj emrin: ";
     cin >> n.emri;
     cout << "Shkruaj mbiemrin: ";
     cin >> n.mbiemri;
+    cout << "Shkruaj klasen: ";
+    cin >> n.klasa;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n'); // pastro buffer-in
+    cout << "Shkruaj shkollen: ";
+    getline(cin, n.shkolla);
 
     listaNxenesve.push_back(n);
     cout << "Nxenesi u regjistrua me sukses! ID = " << n.id << endl;
@@ -39,6 +48,7 @@ void modifikoNxenes() {
     int id;
     cout << "Shkruaj ID-ne e nxenesit per modifikim: ";
     cin >> id;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
     for (size_t i = 0; i < listaNxenesve.size(); i++) {
         if (listaNxenesve[i].id == id) {
@@ -46,10 +56,17 @@ void modifikoNxenes() {
             cin >> listaNxenesve[i].emri;
             cout << "Shkruaj mbiemrin e ri: ";
             cin >> listaNxenesve[i].mbiemri;
+            cout << "Shkruaj klasen e re: ";
+            cin >> listaNxenesve[i].klasa;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Shkruaj shkollen e re: ";
+            getline(cin, listaNxenesve[i].shkolla);
+
             cout << "Nxenesi u modifikua me sukses!\n";
             return;
         }
     }
+
     cout << "Nxenesi me kete ID nuk u gjet!\n";
 }
 
@@ -80,33 +97,59 @@ void fshijNxenes() {
 
 // ================= FUNKSIONI: SHFAQ/KERKO =================
 void shfaqKerkoNxenes() {
+    // 1. Filtrimi sipas shkollës dhe klasës
     if (listaNxenesve.empty()) {
         cout << "Nuk ka nxenes te regjistruar.\n";
         return;
     }
 
-    cout << "\n--- Lista e nxenesve ---\n";
+    string shkolla, klasa;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n'); // pastro buffer-in
+    cout << "Filtrimi sipas shkollës (ose enter per te lene bosh): ";
+    getline(cin, shkolla);
+    cout << "Filtrimi sipas klasës (ose enter per te lene bosh): ";
+    getline(cin, klasa);
+
+    cout << "\n--- Nxenesit e filtruar ---\n";
+    bool kaNxenes = false;
     for (size_t i = 0; i < listaNxenesve.size(); i++) {
-        cout << "ID: " << listaNxenesve[i].id << " | "
-             << listaNxenesve[i].emri << " " << listaNxenesve[i].mbiemri << endl;
+        bool shkollaOk = shkolla.empty() || listaNxenesve[i].shkolla == shkolla;
+        bool klasaOk = klasa.empty() || listaNxenesve[i].klasa == klasa;
+
+        if (shkollaOk && klasaOk) {
+            cout << "ID: " << listaNxenesve[i].id
+                 << " | " << listaNxenesve[i].emri << " " << listaNxenesve[i].mbiemri
+                 << " | Klasa: " << listaNxenesve[i].klasa
+                 << " | Shkolla: " << listaNxenesve[i].shkolla << endl;
+            kaNxenes = true;
+        }
     }
+    if (!kaNxenes) cout << "Nuk u gjet asnje nxenes me keto kritere.\n";
 
-    string emriKerko;
-    cout << "Shkruaj emrin per kerkimin (ose enter per te anashkaluar): ";
-    cin.ignore(); // për të pastruar buffer-in
-    getline(cin, emriKerko);
+    // 2. Kerkimi sipas emrit, mbiemrit ose ID-së
+    string kerkimi;
+    cout << "\nKerko nxenes sipas emrit, mbiemrit ose ID-se (ose enter per te anashkaluar): ";
+    getline(cin, kerkimi);
 
-    if (!emriKerko.empty()) {
+    if (!kerkimi.empty()) {
         bool gjet = false;
         for (size_t i = 0; i < listaNxenesve.size(); i++) {
-            if (listaNxenesve[i].emri == emriKerko) {
+            stringstream ss;
+            ss << listaNxenesve[i].id;
+            string idStr = ss.str();
+
+            if (listaNxenesve[i].emri == kerkimi ||
+                listaNxenesve[i].mbiemri == kerkimi ||
+                idStr == kerkimi) {
                 cout << "Nxenesi u gjet: ID=" << listaNxenesve[i].id
                      << ", Emri=" << listaNxenesve[i].emri
-                     << ", Mbiemri=" << listaNxenesve[i].mbiemri << endl;
+                     << ", Mbiemri=" << listaNxenesve[i].mbiemri
+                     << ", Klasa=" << listaNxenesve[i].klasa
+                     << ", Shkolla=" << listaNxenesve[i].shkolla << endl;
                 gjet = true;
             }
         }
-        if (!gjet) cout << "Nuk u gjet nxenes me kete emer.\n";
+        if (!gjet) cout << "Nuk u gjet nxenes me kete emer/ID.\n";
     }
 }
 
@@ -130,42 +173,41 @@ int main() {
         cin >> zgjedhja;
 
         switch (zgjedhja) {
-    case 1:
-        regjistroNxenes();
-        break;
+            case 1:
+                regjistroNxenes();
+                break;
 
-    case 2:
-        if (listaNxenesve.empty()) {
-            cout << "Nuk ka nxenes per modifikim!\n";
-        } else {
-            modifikoNxenes();
+            case 2:
+                if (listaNxenesve.empty()) {
+                    cout << "Nuk ka nxenes per modifikim!\n";
+                } else {
+                    modifikoNxenes();
+                }
+                break;
+
+            case 3:
+                if (listaNxenesve.empty()) {
+                    cout << "Nuk ka nxenes per fshirje!\n";
+                } else {
+                    fshijNxenes();
+                }
+                break;
+
+            case 4:
+                if (listaNxenesve.empty()) {
+                    cout << "Nuk ka nxenes per shfaqje ose kerkimin!\n";
+                } else {
+                    shfaqKerkoNxenes();
+                }
+                break;
+
+            case 0:
+                cout << "Duke dalur nga sistemi...\n";
+                break;
+
+            default:
+                cout << "Zgjedhje e pavlefshme! Provo perseri.\n";
         }
-        break;
-
-    case 3:
-        if (listaNxenesve.empty()) {
-            cout << "Nuk ka nxenes per fshirje!\n";
-        } else {
-            fshijNxenes();
-        }
-        break;
-
-    case 4:
-        if (listaNxenesve.empty()) {
-            cout << "Nuk ka nxenes per shfaqje ose kerkimin!\n";
-        } else {
-            shfaqKerkoNxenes();
-        }
-        break;
-
-    case 0:
-        cout << "Duke dalur nga sistemi...\n";
-        break;
-
-    default:
-        cout << "Zgjedhje e pavlefshme! Provo perseri.\n";
-}
-
 
     } while (zgjedhja != 0);
 
